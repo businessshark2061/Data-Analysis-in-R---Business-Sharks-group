@@ -34,7 +34,7 @@ library(dplyr)
 
 viewing data + deleting quiver, status 
 
-```r
+  ```r
 data <- read.csv("project.csv")
 head(data)
 
@@ -50,5 +50,10 @@ bad
 names(df)[bad]
 df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
 View(df)
-```
+  ```
+
+converting dates to numbers:
+  ```r
+df <- df %>% mutate(across(contains("time") | contains("date"),
+                           ~lubridate::parse_date_time(., orders=c("Y-m-d H:M:S","Y-m-d"))))
 
