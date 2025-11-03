@@ -1,3 +1,4 @@
+@ -1,35 +1,44 @@
 ---
 title: "business sharks test lukas"
 author: "lukas"
@@ -27,22 +28,36 @@ You can also embed plots, for example:
 plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.,
 
 
-watching data 
+I am watching data 
 
 ```{r}
 
 data <- read.csv("project.csv")
 head(data)
-
+View(data)
 
 Company <- data$Company
 Company
 
 
 table(Company)
-length(table(Company))
+
+length(table(Company))# Give the number of company
 
 ```
+
+
+install.packages("dplyr") 
+library(dplyr)
+
+
+df
+class(df)
+rm(df)
+df <- read.csv("project.csv", stringsAsFactors = FALSE)
+df$Quiver_Upload_Time <- NULL
+names(df)
