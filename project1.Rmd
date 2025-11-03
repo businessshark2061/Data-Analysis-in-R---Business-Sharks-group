@@ -48,16 +48,25 @@ table(Company)
 
 length(table(Company))# Give the number of company
 
-```
+
 
 
 install.packages("dplyr") 
 library(dplyr)
 
 
-df
+
 class(df)
 rm(df)
-df <- read.csv("project.csv", stringsAsFactors = FALSE)
+df <- read.csv("project.csv", stringsAsFactors = FALSE) # new one
 df$Quiver_Upload_Time <- NULL
 names(df)
+
+df$Status <- NULL
+bad <- which(is.na(names(df)) | names(df) == "")
+bad
+names(df)[bad]
+df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
+View(df)
+
+```
