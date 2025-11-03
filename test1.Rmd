@@ -56,7 +56,7 @@ df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
 View(df)
   ```
 
-converting dates to numbers:
+#converting dates to numbers:
 
   ```r
 coerce_date <- function(x) {
@@ -77,6 +77,9 @@ df <- df %>%
   )
 
 View(df)
-# write_csv(df, "project_clean.csv")
+
 ```
 
+#Bellow after we clean all of the data we can save it as a new file:
+
+# write_csv(df, "project_clean.csv")
