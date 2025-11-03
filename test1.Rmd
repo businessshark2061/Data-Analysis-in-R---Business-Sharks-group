@@ -29,8 +29,12 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-install.packages("dplyr") 
+install.packages("dplyr")
+install.packages("lubridate")
+install.packages("readr")
 library(dplyr)
+library(lubridate)
+library(readr)
 
 viewing data + deleting quiver, status 
 
@@ -53,7 +57,26 @@ View(df)
   ```
 
 converting dates to numbers:
+
   ```r
-df <- df %>% mutate(across(contains("time") | contains("date"),
-                           ~lubridate::parse_date_time(., orders=c("Y-m-d H:M:S","Y-m-d"))))
+coerce_date <- function(x) {
+  x <- trimws(as.character(x))
+  out <- suppressWarnings(ymd(x))
+  if (all(is.na(out))) out <- suppressWarnings(dmy(x))
+  if (all(is.na(out))) out <- suppressWarnings(mdy(x))
+  if (all(is.na(out))) out <- suppressWarnings(readr::parse_date(x,
+                      locale = locale(date_names = "en")))
+  as.Date(out)
+}
+
+df <- df %>%
+  mutate(
+    Traded        = coerce_date(Traded),
+    Filed         = coerce_date(Filed),
+    last_modified = coerce_date(last_modified)
+  )
+
+View(df)
+# write_csv(df, "project_clean.csv")
+```
 
