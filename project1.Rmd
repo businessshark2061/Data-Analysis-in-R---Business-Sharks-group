@@ -1,7 +1,8 @@
 ---
-title: "Untitled"
-output: html_document
+title: "business sharks test lukas"
+author: "lukas"
 date: "2025-11-03"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +30,19 @@ plot(pressure)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
+watching data 
+
+```{r}
 
 data <- read.csv("project.csv")
 head(data)
 
+
+Company <- data$Company
+Company
+
+
+table(Company)
+length(table(Company))
+
+```
