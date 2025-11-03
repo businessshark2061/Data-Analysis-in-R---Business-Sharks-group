@@ -29,7 +29,16 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
+install.packages("dplyr") 
+library(dplyr)
 
 data <- read.csv("project.csv")
 head(data)
 
+View(data)
+df
+class(df)
+rm(df)
+df <- read.csv("project.csv", stringsAsFactors = FALSE)
+df$Quiver_Upload_Time <- NULL
+names(df)
