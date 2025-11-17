@@ -11,3 +11,5 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+
+ProjectName: https://github.com/businessshark2061/Data-Analysis-in-R---Business-Sharks-group

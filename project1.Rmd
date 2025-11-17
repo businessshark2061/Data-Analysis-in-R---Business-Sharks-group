@@ -48,20 +48,20 @@ table(Company)
 
 length(table(Company))# Give the number of company
 
+```
 
 
 
+```{r}
 install.packages("dplyr") 
 library(dplyr)
 
-
-
 class(df)
 rm(df)
-df <- read.csv("project.csv", stringsAsFactors = FALSE) # new one
+df <- read.csv("project.csv", stringsAsFactors = FALSE)
 df$Quiver_Upload_Time <- NULL
-names(df)
 
+names(df)
 df$Status <- NULL
 bad <- which(is.na(names(df)) | names(df) == "")
 bad
@@ -70,3 +70,80 @@ df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
 View(df)
 
 ```
+
+
+converting dates to numbers:
+
+  ```{r}
+df <- df %>% mutate(across(contains("time") | contains("date"),
+                           ~lubridate::parse_date_time(., orders=c("Y-m-d H:M:S","Y-m-d"))))
+View(df)
+
+```
+
+cleaning data all across all column
+
+```{r}
+
+install.packages("dplyr")
+install.packages("lubridate")
+install.packages("readr")
+library(dplyr)
+library(lubridate)
+library(readr)
+
+coerce_date <- function(x) {
+  x <- trimws(as.character(x))
+  out <- suppressWarnings(ymd(x))
+  if (all(is.na(out))) out <- suppressWarnings(dmy(x))
+  if (all(is.na(out))) out <- suppressWarnings(mdy(x))
+  if (all(is.na(out))) out <- suppressWarnings(readr::parse_date(x,
+                      locale = locale(date_names = "en")))
+  as.Date(out)
+}
+
+df <- df %>%
+  mutate(
+    Traded        = coerce_date(Traded),
+    Filed         = coerce_date(Filed),
+    last_modified = coerce_date(last_modified)
+  )
+
+View(df)
+# write_csv(df, "project_clean.csv")
+```
+
+
+```{r}
+
+
+library(stringr)
+
+
+# Create fonction for converting value
+
+convert_value <- function(val) {
+#delete  $ et ,
+
+val <- str_replace_all(val, "[$,]", "")
+  
+#check if it is an interval
+  if (str_detect(val, "-")) {
+    nums <- str_split(val, "-", simplify = TRUE)
+    # prendre la moyenne
+    return(mean(as.numeric(nums))) } 
+    else { return(as.numeric(val)) } }
+
+# apply it to df
+x_num <- sapply(df$Trade_Size_USD, convert_value)
+x_num
+
+breaks <- c(0,1001,15000,50000,100000,500000,1000000)
+labels <- c("0-1,000", "1,001-5,000", "5,001-15,000", "15,001-50,000","500001-1000000")
+
+x_cut <- cut(x_num, breaks = breaks, labels = labels, right = TRUE)
+
+
+```
+
+

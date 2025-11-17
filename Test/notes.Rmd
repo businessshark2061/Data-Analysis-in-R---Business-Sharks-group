@@ -1,0 +1,186 @@
+---
+title: "notes"
+author: "Julien"
+date: "2025-10-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+library(googlesheets4)
+## Warning: package 'googlesheets4' was built under R version 4.4.3
+gs4_deauth()
+d <- read_sheet("https://docs.google.com/spreadsheets/d/1I1ZJ4I345TfaHvyCCgzMz8pMsfS_J3yi9WcpcrhO6No/edit?usp=sharing", "clean_data")
+## ✔ Reading from "Green_DAR2025_data".
+## ✔ Range ''clean_data''.
+
+
+# descriptive statistic im R
+
+## Distribution of one variable
+
+- The arithmetic mean
+- The median
+- The mode (usually: the most frequent value)
+- The geometric mean (we use it for example to calculate compound average annual rate of growth)
+- [Truncated mean](https://en.wikipedia.org/wiki/Truncated_mean)
+
+Let us take `head_circ` and `fb_friends` variables from the data and calculate the mean, the median, the geometric mean, the truncated mean (cut 5\% from each tail). 
+
+### central tendency and positional measures
+
+install.packages("psych")
+library(psych)
+
+install.packages("modeest")
+library(modeest)
+
+
+View(d$head_circ)
+table(d$head_circ)
+
+mean(d$head_circ, na.rm = TRUE)
+mean(d$fb_friends, na.rm = TRUE)
+
+
+median(d$head_circ, na.rm = TRUE)
+median(d$fb_friends, na.rm = TRUE)
+
+
+mode1 <- names(sort(table(d$head_circ), decreasing = TRUE))[1]
+mode2 <- names(sort(table(d$fb_friends), decreasing = TRUE))[1]
+
+mode(d$head_circ)
+
+
+geometric_mean <- function(x, na.rm = FALSE) {
+  if (na.rm) x <- x[!is.na(x)]
+  prod(x)^(1/length(x))
+}
+geometric_mean(d$head_circ, na.rm = TRUE)
+
+
+geometric.mean(d$head_circ, na.rm = TRUE)
+
+
+geometric1 <- function(x, na.rm = FALSE) {exp(mean(log(x), na.rm=TRUE))}
+
+geometric1(d$head_circ, na.rm = TRUE)
+
+
+
+__Positional measures__
+
+Quartiles, deciles, percentiles. They are all called quaNtiles. 
+
+
+# quaRtiles:
+quantile(d$head_circ, c(0.25, 0.5, 0.75), na.rm=TRUE)
+quantile(d$fb_friends, c(0.25, 0.5, 0.75), na.rm=TRUE)
+
+# deciles:
+(1:9)/10
+quantile(d$head_circ, (1:9)/10, na.rm=TRUE)
+quantile(d$fb_friends, (1:9)/10, na.rm=TRUE)
+
+# specific percentiles, for example 65th percentile
+quantile(d$head_circ, .65, na.rm=TRUE)
+
+### Dispersion measures
+
+- standard deviation
+- variance
+- range (max-min)
+- IQR ([interquartile range](https://en.wikipedia.org/wiki/Interquartile_range)) 
+- [mean absolute difference](https://en.wikipedia.org/wiki/Mean_absolute_difference)
+
+
+sd(d$head_circ, na.rm = TRUE)
+sd(d$fb_friends, na.rm = TRUE)
+
+
+
+var(d$head_circ, na.rm = TRUE)
+var(d$fb_friends, na.rm = TRUE)
+
+
+range(d$head_circ, na.rm = TRUE)
+range(d$fb_friends, na.rm = TRUE)
+
+diff(range(d$head_circ, na.rm = TRUE))
+diff(range(d$fb_friends, na.rm = TRUE))
+
+IQR(d$head_circ, na.rm = TRUE)
+IQR(d$fb_friends, na.rm = TRUE)
+
+mad_mean <- function(x, na.rm = FALSE) {
+  if (na.rm) x <- x[!is.na(x)]
+  mean(abs(x - mean(x)))
+}
+mad_mean(d$head_circ, na.rm = TRUE)
+mad_mean(d$fb_friends, na.rm = TRUE)
+
+
+library(DescTools)
+
+MeanAD(d$head_circ, na.rm = TRUE)
+MeanAD(d$fb_friends, na.rm = TRUE)
+
+mean(abs(d$head_circ - M), na.rm=TRUE)
+M <- mean(d$head_circ, na.rm=TRUE)
+
+
+gs4_deauth()
+d1 <- read_sheet("https://docs.google.com/spreadsheets/d/1CCC_-5LSy8_3nQYi55-dtQKhkbgcstzul8LNt78WVNU/edit?usp=sharing")
+
+
+View(d1)
+
+j=0
+a<- for(i in 2:14){ (abs(d1[[1,2]]-(d1[[i,2]]))) }
+
+a
+
+
+
+correct <- d1[1,2:11]
+for(i in 2:14){
+  print("===================================")
+  print(d1$id[i])
+  print(d1[i,2:11]-correct)
+  print("sum of absolute differences: ")
+  print(sum(abs(d1[i,2:11]-correct)))}
+
+
+#for which face there was the lowest dispersion in answers ? 
+
+for ( column in 2:11){ print(names(d1))[column]
+  print(sd(d1[[column]]))} 
+
+sd(d1[[4]])
+
