@@ -74,14 +74,6 @@ View(df)
 
 converting dates to numbers:
 
-  ```{r}
-df <- df %>% mutate(across(contains("time") | contains("date"),
-                           ~lubridate::parse_date_time(., orders=c("Y-m-d H:M:S","Y-m-d"))))
-View(df)
-
-```
-
-cleaning data all across all column
 
 ```{r}
 
@@ -92,6 +84,8 @@ library(dplyr)
 library(lubridate)
 library(readr)
 
+
+
 coerce_date <- function(x) {
   x <- trimws(as.character(x))
   out <- suppressWarnings(ymd(x))
@@ -101,6 +95,7 @@ coerce_date <- function(x) {
                       locale = locale(date_names = "en")))
   as.Date(out)
 }
+#cleaning data all across all column
 
 df <- df %>%
   mutate(
@@ -114,36 +109,62 @@ View(df)
 ```
 
 
+Converting trade size usd into intervall
+
+
 ```{r}
 
+parse_value_or_interval <- function(x) {
+  x_clean <- gsub("[$,]", "", x)
+  if(grepl("-", x_clean)) {  # c'est un intervalle
+    parts <- strsplit(x_clean, " - ")[[1]]
+    start <- as.numeric(parts[1])
+    end <- as.numeric(parts[2])
+  } else {  # valeur unique
+    start <- as.numeric(x_clean)
+    end <- start
+  }
+  return(c(start = start, end = end))
+}
 
-library(stringr)
+# Parser tout le vecteur
+parsed <- t(sapply(df$Trade_Size_USD, parse_value_or_interval))
+parsed <- as.data.frame(parsed)
 
+# Intervalles connus (start != end)
+known_intervals <- parsed[parsed$start != parsed$end & !is.na(parsed$start) & !is.na(parsed$end), ]
 
-# Create fonction for converting value
-
-convert_value <- function(val) {
-#delete  $ et ,
-
-val <- str_replace_all(val, "[$,]", "")
+# Fonction robuste pour remplacer valeur unique par intervalle
+replace_by_interval <- function(start, end, known_intervals) {
+  if(is.na(start) | is.na(end)) {
+    return(c(NA, NA))
+  }
   
-#check if it is an interval
-  if (str_detect(val, "-")) {
-    nums <- str_split(val, "-", simplify = TRUE)
-    # prendre la moyenne
-    return(mean(as.numeric(nums))) } 
-    else { return(as.numeric(val)) } }
+  if(!is.na(start) & start == end) {  # valeur unique
+    match <- known_intervals[known_intervals$start <= start & known_intervals$end >= start, ]
+    if(nrow(match) > 0) {
+      return(c(match$start[1], match$end[1]))
+    } else {
+      return(c(start, end))
+    }
+  } else {  # déjà un intervalle
+    return(c(start, end))
+  }
+}
 
-# apply it to df
-x_num <- sapply(df$Trade_Size_USD, convert_value)
-x_num
+# Appliquer à tout le vecteur
+final_intervals <- t(apply(parsed, 1, function(row) replace_by_interval(row["start"], row["end"], known_intervals)))
 
-breaks <- c(0,1001,15000,50000,100000,500000,1000000)
-labels <- c("0-1,000", "1,001-5,000", "5,001-15,000", "15,001-50,000","500001-1000000")
+# Dataframe final
+final_df <- data.frame(
+  original = df$Trade_Size_USD,
+  start = final_intervals[, 1],
+  end = final_intervals[, 2]
+)
 
-x_cut <- cut(x_num, breaks = breaks, labels = labels, right = TRUE)
+print(final_df)
 
+View(df)
 
 ```
-
 
