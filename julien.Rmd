@@ -34,9 +34,12 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 I am watching data 
 
+
+
 ```{r}
 
 data <- read.csv("project.csv")
+
 head(data)
 View(data)
 
@@ -72,7 +75,7 @@ View(df)
 ```
 
 
-converting dates to numbers:
+##converting dates to numbers:
 
 
 ```{r}
@@ -109,7 +112,7 @@ View(df)
 ```
 
 
-Converting trade size usd into intervall
+## Converting trade size usd into intervall
 
 
 ```{r}
@@ -164,7 +167,9 @@ final_df <- data.frame(
 
 print(final_df)
 
+
+df$Trade_Size_USD <- final_df
 View(df)
 
+
 ```
-bklalal
