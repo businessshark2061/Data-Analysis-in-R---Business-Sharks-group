@@ -19,14 +19,6 @@ When you click the **Knit** button a document will be generated that includes bo
 summary(cars)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.,
 
@@ -108,7 +100,6 @@ View(df)
 ```
 
 
-<<<<<<< HEAD
 Converting trade size usd into intervall
 
 
@@ -163,11 +154,45 @@ final_df <- data.frame(
 )
 
 print(final_df)
-
+df$Trade_Size_USD <- final_df
 View(df)
 
 ```
-blabla
-=======
-# write_csv(df, "project_clean.csv")
->>>>>>> 911d35cbfa860970063be4d57fc43092da33bb8d
+
+## Creating Trade Delay (in days)
+
+df <- df %>%
+  mutate(
+    trade_delay = as.numeric(Filed - Traded)
+  )
+
+# Quick check
+summary(df$trade_delay)
+head(df$trade_delay)
+
+## Creating Net Trade Direction
+
+df <- df %>%
+  mutate(
+    net_trade_direction = case_when(
+      Transaction == "Purchase"           ~ 1,
+      Transaction %in% c("Sale", "Sale (Partial)", "Sale (Full)") ~ -1,
+      Transaction == "Exchange"           ~ 0,   # or NA_real_ if you prefer
+      TRUE                                     ~ NA_real_
+    )
+  )
+
+head(df[, c("Transaction", "net_trade_direction")])
+
+total_direction <- sum(df$net_trade_direction, na.rm = TRUE)
+total_direction
+
+## Creating Midpoint for Trade Size
+
+df <- df %>%
+  mutate(
+    trade_size_mid = (Trade_Size_USD$start + Trade_Size_USD$end)/2
+  )
+  
+
+
