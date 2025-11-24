@@ -117,60 +117,34 @@ View(df)
 
 ```{r}
 
-parse_value_or_interval <- function(x) {
-  x_clean <- gsub("[$,]", "", x)
-  if(grepl("-", x_clean)) {  # c'est un intervalle
-    parts <- strsplit(x_clean, " - ")[[1]]
-    start <- as.numeric(parts[1])
-    end <- as.numeric(parts[2])
-  } else {  # valeur unique
-    start <- as.numeric(x_clean)
-    end <- start
-  }
-  return(c(start = start, end = end))
+
+# Robust function to handle vectors properly
+parse_min_max <- function(x) {
+  # If x is NA or empty (works for vectors of length 1)
+  if (length(x) != 1 || is.na(x) || trimws(x) == "") return(c(min = NA, max = NA))
+  
+  # Remove $ and commas
+  x_clean <- gsub("[$,]", "", as.character(x))
+  
+  # Extract all numbers (integer or decimal)
+  nums <- as.numeric(unlist(regmatches(x_clean, gregexpr("[0-9]+\\.?[0-9]*", x_clean))))
+  
+  # If no numbers found
+  if (length(nums) == 0) return(c(min = NA, max = NA))
+  
+  # Return min and max
+  c(min = min(nums, na.rm = TRUE), max = max(nums, na.rm = TRUE))
 }
 
-# Parser tout le vecteur
-parsed <- t(sapply(df$Trade_Size_USD, parse_value_or_interval))
+# Apply to the entire column safely
+parsed <- t(sapply(as.character(df$Trade_Size_USD), parse_min_max))
 parsed <- as.data.frame(parsed)
 
-# Intervalles connus (start != end)
-known_intervals <- parsed[parsed$start != parsed$end & !is.na(parsed$start) & !is.na(parsed$end), ]
+# Add min and max columns to your dataframe
+df$Trade_Size_USD_min <- parsed$min
+df$Trade_Size_USD_max <- parsed$max
 
-# Fonction robuste pour remplacer valeur unique par intervalle
-replace_by_interval <- function(start, end, known_intervals) {
-  if(is.na(start) | is.na(end)) {
-    return(c(NA, NA))
-  }
-  
-  if(!is.na(start) & start == end) {  # valeur unique
-    match <- known_intervals[known_intervals$start <= start & known_intervals$end >= start, ]
-    if(nrow(match) > 0) {
-      return(c(match$start[1], match$end[1]))
-    } else {
-      return(c(start, end))
-    }
-  } else {  # déjà un intervalle
-    return(c(start, end))
-  }
-}
-
-# Appliquer à tout le vecteur
-final_intervals <- t(apply(parsed, 1, function(row) replace_by_interval(row["start"], row["end"], known_intervals)))
-
-# Dataframe final
-final_df <- data.frame(
-  original = df$Trade_Size_USD,
-  start = final_intervals[, 1],
-  end = final_intervals[, 2]
-)
-
-print(final_df)
-
-
-df$Trade_Size_USD <- final_df
 View(df)
-
 
 ```
 
@@ -178,11 +152,11 @@ View(df)
 View(df)
 
 #total number of trades :
-length(df$Trade_Size_USD$original)
+length(df$Trade_Size_USD_min)
 
 
 #average trade size :
-mean(c(mean(df$Trade_Size_USD$start,na.rm = TRUE), mean(df$Trade_Size_USD$end,na.rm = TRUE)))
+mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.rm = TRUE)))
   
 #number of trades per ticker  
 
