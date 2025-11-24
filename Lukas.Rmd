@@ -27,7 +27,54 @@ You can also embed plots, for example:
 plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.,
+
+
+I am watching data 
+
+```{r}
+
+data <- read.csv("project.csv")
+head(data)
+View(data)
+
+Company <- data$Company
+Company
+
+
+table(Company)
+
+length(table(Company))# Give the number of company
+
+```
+
+
+
+```{r}
+install.packages("dplyr") 
+library(dplyr)
+
+class(df)
+rm(df)
+df <- read.csv("project.csv", stringsAsFactors = FALSE)
+df$Quiver_Upload_Time <- NULL
+
+names(df)
+df$Status <- NULL
+bad <- which(is.na(names(df)) | names(df) == "")
+bad
+names(df)[bad]
+df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
+View(df)
+
+```
+
+
+converting dates to numbers:
+
+
+```{r}
 
 install.packages("dplyr")
 install.packages("lubridate")
@@ -36,29 +83,8 @@ library(dplyr)
 library(lubridate)
 library(readr)
 
-viewing data + deleting quiver, status 
 
-  ```r
-data <- read.csv("project.csv")
-head(data)
 
-View(data)
-df
-class(df)
-rm(df)
-df <- read.csv("project.csv", stringsAsFactors = FALSE)
-df$Quiver_Upload_Time <- NULL
-df$Status <- NULL
-bad <- which(is.na(names(df)) | names(df) == "")
-bad
-names(df)[bad]
-df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
-View(df)
-  ```
-
-#converting dates to numbers:
-
-  ```r
 coerce_date <- function(x) {
   x <- trimws(as.character(x))
   out <- suppressWarnings(ymd(x))
@@ -68,6 +94,7 @@ coerce_date <- function(x) {
                       locale = locale(date_names = "en")))
   as.Date(out)
 }
+#cleaning data all across all column
 
 df <- df %>%
   mutate(
@@ -77,11 +104,66 @@ df <- df %>%
   )
 
 View(df)
-
+# write_csv(df, "project_clean.csv")
 ```
 
-#Bellow after we clean all of the data we can save it as a new file:
 
-# write_csv(df, "project_clean.csv")
+Converting trade size usd into intervall
 
+
+```{r}
+
+parse_value_or_interval <- function(x) {
+  x_clean <- gsub("[$,]", "", x)
+  if(grepl("-", x_clean)) {  # c'est un intervalle
+    parts <- strsplit(x_clean, " - ")[[1]]
+    start <- as.numeric(parts[1])
+    end <- as.numeric(parts[2])
+  } else {  # valeur unique
+    start <- as.numeric(x_clean)
+    end <- start
+  }
+  return(c(start = start, end = end))
+}
+
+# Parser tout le vecteur
+parsed <- t(sapply(df$Trade_Size_USD, parse_value_or_interval))
+parsed <- as.data.frame(parsed)
+
+# Intervalles connus (start != end)
+known_intervals <- parsed[parsed$start != parsed$end & !is.na(parsed$start) & !is.na(parsed$end), ]
+
+# Fonction robuste pour remplacer valeur unique par intervalle
+replace_by_interval <- function(start, end, known_intervals) {
+  if(is.na(start) | is.na(end)) {
+    return(c(NA, NA))
+  }
+  
+  if(!is.na(start) & start == end) {  # valeur unique
+    match <- known_intervals[known_intervals$start <= start & known_intervals$end >= start, ]
+    if(nrow(match) > 0) {
+      return(c(match$start[1], match$end[1]))
+    } else {
+      return(c(start, end))
+    }
+  } else {  # déjà un intervalle
+    return(c(start, end))
+  }
+}
+
+# Appliquer à tout le vecteur
+final_intervals <- t(apply(parsed, 1, function(row) replace_by_interval(row["start"], row["end"], known_intervals)))
+
+# Dataframe final
+final_df <- data.frame(
+  original = df$Trade_Size_USD,
+  start = final_intervals[, 1],
+  end = final_intervals[, 2]
+)
+
+print(final_df)
+
+View(df)
+
+```
 blabla
