@@ -108,6 +108,7 @@ View(df)
 ```
 
 
+<<<<<<< HEAD
 Converting trade size usd into intervall
 
 
@@ -167,3 +168,6 @@ View(df)
 
 ```
 blabla
+=======
+# write_csv(df, "project_clean.csv")
+>>>>>>> 911d35cbfa860970063be4d57fc43092da33bb8d

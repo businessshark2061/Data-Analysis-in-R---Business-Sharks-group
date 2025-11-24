@@ -173,3 +173,23 @@ View(df)
 
 
 ```
+
+``` {r}
+View(df)
+
+#total number of trades :
+length(df$Trade_Size_USD$original)
+
+
+#average trade size :
+mean(c(mean(df$Trade_Size_USD$start,na.rm = TRUE), mean(df$Trade_Size_USD$end,na.rm = TRUE)))
+  
+#number of trades per ticker  
+
+install.packages("dplyr")
+library(dplyr)
+
+nb <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
+nb
+
+```
