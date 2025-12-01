@@ -147,23 +147,69 @@ df$Trade_Size_USD_max <- parsed$max
 View(df)
 
 ```
+##total number of trades :
 
 ``` {r}
 View(df)
-
-#total number of trades :
 length(df$Trade_Size_USD_min)
 
+```
 
-#average trade size :
+
+##average trade size :
+```{r}
+
 mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.rm = TRUE)))
-  
-#number of trades per ticker  
+```
+
+
+
+
+##number of trades per ticker  
+
+```{r}
 
 install.packages("dplyr")
 library(dplyr)
 
 nb <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
 nb
-
 ```
+
+## Creating Trade Delay (in days)
+
+df <- df %>%
+  mutate(
+    trade_delay = as.numeric(Filed - Traded)
+  )
+
+# Quick check
+summary(df$trade_delay)
+head(df$trade_delay)
+
+## Creating Net Trade Direction
+
+df <- df %>%
+  mutate(
+    net_trade_direction = case_when(
+      Transaction == "Purchase"           ~ 1,
+      Transaction %in% c("Sale", "Sale (Partial)", "Sale (Full)") ~ -1,
+      Transaction == "Exchange"           ~ 0,   # or NA_real_ if you prefer
+      TRUE                                     ~ NA_real_
+    )
+  )
+
+head(df[, c("Transaction", "net_trade_direction")])
+
+total_direction <- sum(df$net_trade_direction, na.rm = TRUE)
+total_direction
+
+## Creating Midpoint for Trade Size
+
+df <- df %>%
+  mutate(
+    trade_size_mid = (Trade_Size_USD$start + Trade_Size_USD$end)/2
+  )
+  
+
+
