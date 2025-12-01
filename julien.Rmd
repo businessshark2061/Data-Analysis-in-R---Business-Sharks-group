@@ -165,3 +165,10 @@ df <- df %>%
     trade_size_mid = (Trade_Size_USD_min + Trade_Size_USD_max)/2
   )
 
+##Excess return ↔ Chamber correlation
+
+translate the binary variable into 0/1 and compute the Pearson correlation coefficient
+
+Chamber <- df$Chamber %>%
+  mutate(binary01 = ifelse(variable == "House", 1, 0))
+
