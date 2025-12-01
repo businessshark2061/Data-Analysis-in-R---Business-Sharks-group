@@ -1,4 +1,4 @@
-@ -1,35 +1,44 @@
+
 ---
 title: "business sharks test lukas"
 author: "lukas"
@@ -6,38 +6,18 @@ date: "2025-11-03"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## R Markdown
+## install packages
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+install.packages("dplyr") 
+install.packages("lubridate")
+install.packages("readr")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+library(lubridate)
+library(readr)
+library(dplyr)
 
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.,
-
-
-I am watching data 
-
-
-
-```{r}
-
+##I am watching data 
 data <- read.csv("project.csv")
 
 head(data)
@@ -51,13 +31,6 @@ table(Company)
 
 length(table(Company))# Give the number of company
 
-```
-
-
-
-```{r}
-install.packages("dplyr") 
-library(dplyr)
 
 class(df)
 rm(df)
@@ -70,24 +43,8 @@ bad <- which(is.na(names(df)) | names(df) == "")
 bad
 names(df)[bad]
 df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
-View(df)
-
-```
-
 
 ##converting dates to numbers:
-
-
-```{r}
-
-install.packages("dplyr")
-install.packages("lubridate")
-install.packages("readr")
-library(dplyr)
-library(lubridate)
-library(readr)
-
-
 
 coerce_date <- function(x) {
   x <- trimws(as.character(x))
@@ -98,25 +55,16 @@ coerce_date <- function(x) {
                       locale = locale(date_names = "en")))
   as.Date(out)
 }
-#cleaning data all across all column
+## cleaning data all across all column
 
 df <- df %>%
   mutate(
     Traded        = coerce_date(Traded),
     Filed         = coerce_date(Filed),
     last_modified = coerce_date(last_modified)
-  )
-
-View(df)
-# write_csv(df, "project_clean.csv")
-```
-
+  ) # write_csv(df, "project_clean.csv")
 
 ## Converting trade size usd into intervall
-
-
-```{r}
-
 
 # Robust function to handle vectors properly
 parse_min_max <- function(x) {
@@ -144,35 +92,21 @@ parsed <- as.data.frame(parsed)
 df$Trade_Size_USD_min <- parsed$min
 df$Trade_Size_USD_max <- parsed$max
 
-View(df)
 
-```
 ##total number of trades :
 
-``` {r}
-View(df)
 length(df$Trade_Size_USD_min)
-
-```
 
 
 ##average trade size :
-```{r}
 
 mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.rm = TRUE)))
-```
-
 
 ##number of trades per ticker  
 
-```{r}
-
-install.packages("dplyr")
-library(dplyr)
-
 nb <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
 nb
-```
+
 
 ## Creating Trade Delay (in days)
 
@@ -206,9 +140,6 @@ total_direction
 
 df <- df %>%
   mutate(
-    trade_size_mid = (Trade_Size_USD_min + Trade_Size_USD_max/2
-  ))
-  
-View(df)
-
+    trade_size_mid = (Trade_Size_USD_min + Trade_Size_USD_max)/2
+  )
 
