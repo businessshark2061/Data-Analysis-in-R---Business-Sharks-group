@@ -6,7 +6,6 @@ date: "2025-11-03"
 output: html_document
 ---
 
-
 ## install packages
 
 install.packages("dplyr") 
@@ -104,9 +103,32 @@ mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.r
 
 ##number of trades per ticker  
 
-nb <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
-nb
+ntpt <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
+ntpt
 
+
+##number of trade per year/per month
+
+dates <- as.Date(df$Traded) #change the format as a date
+years <- format(dates, "%Y")# Take the year 
+month <- format(dates, "%m")# take the month
+
+Ntpy <- table(years)#give the number for each year
+Ntpm <- table(month)# give the number for each month
+
+##size of trade per year/per month
+
+stpymid <- tapply(df$trade_size_mid, years, sum)
+stpymax<-tapply(df$Trade_Size_USD_max, years, sum)
+stpymin <- tapply(df$Trade_Size_USD_min, years, sum)
+
+stpymmid<- tapply(df$trade_size_mid, month, sum)
+stpymmax<-tapply(df$Trade_Size_USD_max, month, sum)
+stpymmin<- tapply(df$Trade_Size_USD_min, month, sum)
+
+
+## delete tickertype
+df <- df[, -2]
 
 ## Creating Trade Delay (in days)
 
@@ -142,4 +164,11 @@ df <- df %>%
   mutate(
     trade_size_mid = (Trade_Size_USD_min + Trade_Size_USD_max)/2
   )
+
+##Excess return ↔ Chamber correlation
+
+translate the binary variable into 0/1 and compute the Pearson correlation coefficient
+
+Chamber <- df$Chamber %>%
+  mutate(binary01 = ifelse(variable == "House", 1, 0))
 
