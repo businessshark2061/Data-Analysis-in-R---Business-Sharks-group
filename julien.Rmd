@@ -163,8 +163,6 @@ mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.r
 ```
 
 
-
-
 ##number of trades per ticker  
 
 ```{r}
@@ -208,8 +206,9 @@ total_direction
 
 df <- df %>%
   mutate(
-    trade_size_mid = (Trade_Size_USD$start + Trade_Size_USD$end)/2
-  )
+    trade_size_mid = (Trade_Size_USD_min + Trade_Size_USD_max/2
+  ))
   
+View(df)
 
 
