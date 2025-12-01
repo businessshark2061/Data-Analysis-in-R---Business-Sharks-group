@@ -1,3 +1,4 @@
+
 ---
 title: "business sharks test lukas"
 author: "lukas"
@@ -5,29 +6,22 @@ date: "2025-11-03"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## R Markdown
+## install packages
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+install.packages("dplyr") 
+install.packages("lubridate")
+install.packages("readr")
+install.packages("ggplot2")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+library(lubridate)
+library(readr)
+library(dplyr)
+library(ggplot2)
 
-```{r cars}
-summary(cars)
-```
-
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.,
-
-
-I am watching data 
-
-```{r}
-
+##I am watching data 
 data <- read.csv("project.csv")
+
 head(data)
 View(data)
 
@@ -39,13 +33,6 @@ table(Company)
 
 length(table(Company))# Give the number of company
 
-```
-
-
-
-```{r}
-install.packages("dplyr") 
-library(dplyr)
 
 class(df)
 rm(df)
@@ -58,24 +45,8 @@ bad <- which(is.na(names(df)) | names(df) == "")
 bad
 names(df)[bad]
 df <- df[, !(is.na(names(df)) | names(df) == ""), drop = FALSE]
-View(df)
 
-```
-
-
-converting dates to numbers:
-
-
-```{r}
-
-install.packages("dplyr")
-install.packages("lubridate")
-install.packages("readr")
-library(dplyr)
-library(lubridate)
-library(readr)
-
-
+##converting dates to numbers:
 
 coerce_date <- function(x) {
   x <- trimws(as.character(x))
@@ -86,78 +57,58 @@ coerce_date <- function(x) {
                       locale = locale(date_names = "en")))
   as.Date(out)
 }
-#cleaning data all across all column
+## cleaning data all across all column
 
 df <- df %>%
   mutate(
     Traded        = coerce_date(Traded),
     Filed         = coerce_date(Filed),
     last_modified = coerce_date(last_modified)
-  )
+  ) # write_csv(df, "project_clean.csv")
 
-View(df)
-# write_csv(df, "project_clean.csv")
-```
+## Converting trade size usd into intervall
 
-
-Converting trade size usd into intervall
-
-
-```{r}
-
-parse_value_or_interval <- function(x) {
-  x_clean <- gsub("[$,]", "", x)
-  if(grepl("-", x_clean)) {  # c'est un intervalle
-    parts <- strsplit(x_clean, " - ")[[1]]
-    start <- as.numeric(parts[1])
-    end <- as.numeric(parts[2])
-  } else {  # valeur unique
-    start <- as.numeric(x_clean)
-    end <- start
-  }
-  return(c(start = start, end = end))
+# Robust function to handle vectors properly
+parse_min_max <- function(x) {
+  # If x is NA or empty (works for vectors of length 1)
+  if (length(x) != 1 || is.na(x) || trimws(x) == "") return(c(min = NA, max = NA))
+  
+  # Remove $ and commas
+  x_clean <- gsub("[$,]", "", as.character(x))
+  
+  # Extract all numbers (integer or decimal)
+  nums <- as.numeric(unlist(regmatches(x_clean, gregexpr("[0-9]+\\.?[0-9]*", x_clean))))
+  
+  # If no numbers found
+  if (length(nums) == 0) return(c(min = NA, max = NA))
+  
+  # Return min and max
+  c(min = min(nums, na.rm = TRUE), max = max(nums, na.rm = TRUE))
 }
 
-# Parser tout le vecteur
-parsed <- t(sapply(df$Trade_Size_USD, parse_value_or_interval))
+# Apply to the entire column safely
+parsed <- t(sapply(as.character(df$Trade_Size_USD), parse_min_max))
 parsed <- as.data.frame(parsed)
 
-# Intervalles connus (start != end)
-known_intervals <- parsed[parsed$start != parsed$end & !is.na(parsed$start) & !is.na(parsed$end), ]
+# Add min and max columns to your dataframe
+df$Trade_Size_USD_min <- parsed$min
+df$Trade_Size_USD_max <- parsed$max
 
-# Fonction robuste pour remplacer valeur unique par intervalle
-replace_by_interval <- function(start, end, known_intervals) {
-  if(is.na(start) | is.na(end)) {
-    return(c(NA, NA))
-  }
-  
-  if(!is.na(start) & start == end) {  # valeur unique
-    match <- known_intervals[known_intervals$start <= start & known_intervals$end >= start, ]
-    if(nrow(match) > 0) {
-      return(c(match$start[1], match$end[1]))
-    } else {
-      return(c(start, end))
-    }
-  } else {  # déjà un intervalle
-    return(c(start, end))
-  }
-}
 
-# Appliquer à tout le vecteur
-final_intervals <- t(apply(parsed, 1, function(row) replace_by_interval(row["start"], row["end"], known_intervals)))
+##total number of trades :
 
-# Dataframe final
-final_df <- data.frame(
-  original = df$Trade_Size_USD,
-  start = final_intervals[, 1],
-  end = final_intervals[, 2]
-)
+length(df$Trade_Size_USD_min)
 
-print(final_df)
-df$Trade_Size_USD <- final_df
-View(df)
 
-```
+##average trade size :
+
+mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.rm = TRUE)))
+
+##number of trades per ticker  
+
+nb <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
+nb
+
 
 ## Creating Trade Delay (in days)
 
@@ -191,8 +142,154 @@ total_direction
 
 df <- df %>%
   mutate(
-    trade_size_mid = (Trade_Size_USD$start + Trade_Size_USD$end)/2
+    trade_size_mid = (Trade_Size_USD_min + Trade_Size_USD_max)/2
+  )
+
+##Count trades by State × Chamber × Party
+
+#Summarize counts
+state_chamber_party <- df %>%
+  group_by(State, Chamber, Party) %>%
+  summarise(Num_Trades = n(), .groups = 'drop') %>%
+  arrange(State, Chamber, desc(Num_Trades))
+
+head(state_chamber_party)
+
+#If we want to see party dominance as percentages within each state/chamber:
+
+state_chamber_party <- state_chamber_party %>%
+  group_by(State, Chamber) %>%
+  mutate(Total_Trades = sum(Num_Trades),
+         Party_Percent = Num_Trades / Total_Trades * 100)
+         
+##Visualize with a stacked bar chart       
+
+ggplot(state_chamber_party, aes(x = State, y = Party_Percent, fill = Party)) +
+  geom_col() +
+  facet_wrap(~ Chamber) +  # separate House and Senate
+  labs(y = "Percentage of Trades", title = "Party Distribution by State and Chamber") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+##Dominant Party
+library(dplyr)
+
+dominant_party <- state_chamber_party %>%
+  group_by(State, Chamber) %>%
+  slice_max(order_by = Num_Trades, n = 1) %>%
+  select(State, Chamber, Party, Num_Trades)
+
+dominant_party
+print(dominant_party, n = Inf)
+
+View(df)
+
+##Creating a Heatmap
+
+library(ggplot2)
+
+## Heatmap for dominant party in each state by house and senate
+
+# Determine dominant party per State/Chamber (without the percentage, just the party that dominates)
+dominant_party <- state_chamber_party %>%
+  group_by(State, Chamber) %>%
+  slice_max(order_by = Num_Trades, n = 1) %>%
+  ungroup()
+  
+#Creating heatmap
+
+ggplot(dominant_party, aes(x = State, y = Chamber, fill = Party)) +
+  geom_tile(color = "white") +
+  scale_fill_manual(values = c("D" = "blue", "R" = "red")) +
+  labs(title = "Dominant Party by State and Chamber",
+       x = "State",
+       y = "Chamber") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+##Heatmap (intensity)
+library(ggplot2)
+library(dplyr)
+
+# Create a signed percent: Democrat = positive, Republican = negative
+state_chamber_party <- state_chamber_party %>%
+  mutate(Party_Signed_Percent = ifelse(Party == "D", Party_Percent, -Party_Percent))
+
+#Creating Heatmap
+ggplot(state_chamber_party, aes(x = State, y = Chamber, fill = Party_Signed_Percent)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(
+    low = "red",       # Republican
+    mid = "white",     # neutral
+    high = "blue",     # Democrat
+    midpoint = 0,
+    limits = c(-100, 100),
+    name = "% of Trades\n(Red=R, Blue=D)"
+  ) +
+  labs(title = "Party Dominance Heatmap by State and Chamber",
+       x = "State",
+       y = "Chamber") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+##Excess return by Party
+
+df %>%
+  group_by(Party) %>%
+  summarise(
+    Mean_Excess_Return = mean(excess_return, na.rm = TRUE),
+    Median_Excess_Return = median(excess_return, na.rm = TRUE),
+    SD_Excess_Return = sd(excess_return, na.rm = TRUE),
+    Num_Trades = n()
   )
   
+## The results are very negative which is weird
 
+summary(df$excess_return)
 
+#A lot of NA's messing with the numbers, lets ignore them
+
+mean(df$excess_return, na.rm = TRUE)    # mean ignoring NAs
+median(df$excess_return, na.rm = TRUE)  # median ignoring NAs
+sd(df$excess_return, na.rm = TRUE)      # standard deviation ignoring NAs
+
+## Interpretation
+
+# Mean = −15.03
+# On average, trades underperformed the market benchmark by ~15%.
+# This is slightly higher than the median because a few very large positive trades pull the mean up.
+
+# Median = −27.71
+# More than half of all trades underperformed the benchmark by ~28%.
+# Confirms a negative skew: most trades lost relative to the market.
+
+# SD = 179.91
+# Extremely high variability → trade outcomes are very volatile.
+# extreme outliers like 10,885 or −318 heavily influence dispersion.
+
+##Histogram of Excess returns
+
+library(ggplot2)
+
+# Histogram limited to a reasonable range to visualize most trades
+ggplot(df, aes(x = excess_return)) +
+  geom_histogram(bins = 100, fill = "steelblue", color = "white") +
+  xlim(-500, 500) +  # limits extreme outliers
+  labs(title = "Distribution of Excess Return (Limited View)",
+       x = "Excess Return",
+       y = "Count") +
+  theme_minimal()
+  
+##Who is overperforming?
+#Which company?
+#Which party?
+#Which chamber?
+#Which politician?
+
+#Top overperformers (right tail) — highest excess return
+df %>%
+  filter(!is.na(excess_return)) %>%
+  arrange(desc(excess_return)) %>%
+  select(Name, Party, Company, Ticker, excess_return) %>%
+  head(10)  # top 10 highest excess returns
+  
+  
