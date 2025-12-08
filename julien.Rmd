@@ -8,15 +8,36 @@ output: html_document
 
 ## install packages
 
+
+
+
+if (!require(ggplot2)) install.packages("ggplot2")  
+if (!require(mlogit)) install.packages("mlogit")
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(reshape2)) install.packages("reshape2")
+if (!require(dplyr)) install.packages("dplyr")
+if (!require(tidyr)) install.packages("tidyr")
+if (!require(readxl)) install.packages("readxl")
 install.packages("dplyr") 
 install.packages("lubridate")
 install.packages("readr")
 install.packages("ggplot2")
+install.packages("MASS")
 
+
+# Loading libraries
+library(mlogit)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(tidyr)
+library(readxl)
 library(lubridate)
 library(readr)
 library(dplyr)
 library(ggplot2)
+
+
 
 ##I am watching data 
 data <- read.csv("project.csv")
@@ -93,20 +114,6 @@ parsed <- as.data.frame(parsed)
 df$Trade_Size_USD_min <- parsed$min
 df$Trade_Size_USD_max <- parsed$max
 
-
-##total number of trades :
-
-length(df$Trade_Size_USD_min)
-
-
-##average trade size :
-
-mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.rm = TRUE)))
-
-##number of trades per ticker  
-
-ntpt <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
-ntpt
 
 
 ## delete tickertype
@@ -317,13 +324,137 @@ ggplot(df, aes(x = excess_return)) +
 #Which chamber?
 #Which politician?
 
-#Top overperformers (right tail) — highest excess return
-df %>%
-  filter(!is.na(excess_return)) %>%
-  arrange(desc(excess_return)) %>%
-  select(Name, Party, Company, Ticker, excess_return) %>%
-  head(10)  # top 10 highest excess returns
-  
-  
 
+## calculate the net gain/lost
+
+df$net_gain <- df$excess_return * df$net_trade_direction
+
+#negative mean that it is a lost and positif mean that it is a gain
+
+##Top overperformers (right tail) — highest excess return
+df %>%
+  filter(!is.na(net_gain)) %>%
+  arrange(desc(net_gain)) %>%
+  select(Name, Party, Company, Ticker, net_gain) %>%
+  head(10)  # top 10 highest excess returns
+
+
+
+## test for excess return/ deosnt say anything....
+
+library(quantmod)
+
+getSymbols("V", from="2024-01-01")
+prices <- Cl(V)
+
+trade_date <- "2024-02-29"
+
+# Compute 10-day stock return
+price_t1 <- as.numeric(prices["2024-02-29"])
+price_t0 <- as.numeric(prices["2024-01-29"])
+
+r_stock <- price_t1 / price_t0 - 1
+r_stock
+# Benchmark (S&P 500)
+
+getSymbols("^GSPC", from="2024-01-01")
+mkt <- Cl(GSPC)
+
+
+m1 <- as.numeric(mkt["2024-02-29"])
+m0 <- as.numeric(mkt["2024-01-29"])
+r_mkt <- m1 / m0 - 1
+
+
+excess_10d <- r_stock - r_mkt
+excess_10d
+
+
+
+##Data 
+#total number of trades :
+
+length(df$Trade_Size_USD_min)
+
+
+#average trade size :
+
+mean(c(mean(df$Trade_Size_USD_min,na.rm = TRUE), mean(df$Trade_Size_USD_max,na.rm = TRUE)))
+
+#number of trades per ticker  
+
+ntpt <- df %>% group_by(Ticker) %>%  summarise(Num_Trades = n())
+ntpt
+
+
+##trade data per person
+
+df_person <- df %>%
+  group_by(Name, Party, State, Chamber ) %>%
+  summarise(
+    total_trades = n(),
+    total_trade_value = sum(trade_size_mid, na.rm = TRUE),
+    tot_excess_return  = sum(excess_return, na.rm = TRUE),
+    Number_of_sale     = sum(Transaction == "Sale", na.rm = TRUE),
+    Number_of_purchase = sum(Transaction == "Purchase", na.rm = TRUE),
+    Net_gain =sum(net_gain, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_trades)) 
+  
+View(df_person)
+
+## correlation betzeen trade date and excess return
+
+
+df$Trade_Date_Num <- as.numeric(df$Traded)  # convert Date to numeric
+correlation <- cor(df$Trade_Date_Num , df$excess_return, use = "complete.obs")
+correlation
+# the result mean that there is no correlation beewteen date and excess of return but we can go further and try to understand the relation beetween excess of return and month and year
+plot(df$Traded, df$excess_return,
+     xlab = "Trade Date",
+     ylab = "Excess Return",
+     main = "Excess Return vs Trade Date")
+abline(lm(excess_return ~ as.numeric(Traded), data=df), col="red")
+
+# relation beetween excess of return and month 
+
+df_monthly <- df %>%
+  mutate(Month = as.Date(paste0(format(Traded, "%Y-%m"), "-01"))) %>%  # first day of month
+  group_by(Month) %>%
+  summarise(
+    avg_excess = mean(excess_return, na.rm = TRUE),
+    sd_excess = sd(excess_return, na.rm = TRUE),
+    n_trades = n()
+  ) %>%
+  arrange(Month)
+
+plot(df_monthly$Month, df_monthly$avg_excess, type="b",
+     xaxt = "n",  # suppress default x-axis
+     xlab = "Month", ylab = "Average Excess Return",
+     main = "Average Excess Return per Month")
+
+# Add formatted month labels
+axis(1, at = df_monthly$Month, labels = format(df_monthly$Month, "%b %Y"), las=2)
+
+#the average of excees of return is growing but it is still near 0. The data near 
+     
+# relation beetween excess of return and month 
+
+df_yearly <- df %>%
+  mutate(Year = as.Date(paste0(format(Traded, "%Y"), "-01-01"))) %>%  # first year
+  group_by(Year) %>%
+  summarise(
+    avg_excess = mean(excess_return, na.rm = TRUE),
+    sd_excess = sd(excess_return, na.rm = TRUE),
+    n_trades = n()
+  ) %>%
+  arrange(Year)
+
+plot(df_yearly$Year, df_yearly$avg_excess, type="b",
+     xlab="Year", ylab="Average Excess Return",
+     main="Average Excess Return per Year")
+
+
+# the average excess of return rise each year, is there any correlation beetween the number of transaction and the excess return earning.
 
