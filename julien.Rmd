@@ -437,7 +437,7 @@ plot(df_monthly$Month, df_monthly$avg_excess, type="b",
 # Add formatted month labels
 axis(1, at = df_monthly$Month, labels = format(df_monthly$Month, "%b %Y"), las=2)
 
-#the average of excees of return is growing but it is still near 0. The data near 
+#the average of excees of return is growing but it is still near 0. The data from 2012 are quite unsignificant because of the lack of some of them.
      
 # relation beetween excess of return and month 
 
@@ -447,6 +447,7 @@ df_yearly <- df %>%
   summarise(
     avg_excess = mean(excess_return, na.rm = TRUE),
     sd_excess = sd(excess_return, na.rm = TRUE),
+    Nm=sum(excess_return, na.rm = TRUE),
     n_trades = n()
   ) %>%
   arrange(Year)
@@ -454,7 +455,19 @@ df_yearly <- df %>%
 plot(df_yearly$Year, df_yearly$avg_excess, type="b",
      xlab="Year", ylab="Average Excess Return",
      main="Average Excess Return per Year")
+     
+plot(df_yearly$Year, df_yearly$Nm, type="b",
+     xlab="Year", ylab="number of transaction",
+     main="number of transaction per Year")
+         
 
 
-# the average excess of return rise each year, is there any correlation beetween the number of transaction and the excess return earning.
+# the average excess of return rise each year, is there any correlation beetween the number of transaction and the average excess return ?
+
+correlation <- cor(df_yearly$Nm , df_yearly$avg_excess, use = "complete.obs")
+correlation
+
+
+
+
 
