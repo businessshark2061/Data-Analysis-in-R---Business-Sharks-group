@@ -169,6 +169,10 @@ df <- df %>%
 
 translate the binary variable into 0/1 and compute the Pearson correlation coefficient
 
-Chamber <- df$Chamber %>%
-  mutate(binary01 = ifelse(variable == "House", 1, 0))
+  
+Chamber1 <- ifelse(df$Chamber == "House", 1, 0)
+
+cor(Chamber1, df$excess_return, use = "complete.obs", method = "pearson")
+#the result is -0,12, so it mean that the chamber and excess return are not coralated at all.
+
 
