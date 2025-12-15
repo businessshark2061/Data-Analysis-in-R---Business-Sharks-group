@@ -474,6 +474,8 @@ correlation
 
 plot(df_yearly$n_trades, df_yearly$avg_excess)
 
+# based on that there is no correlation because of the first point in 2012 that disturb the correlation caluclation.
+
 
 
 
