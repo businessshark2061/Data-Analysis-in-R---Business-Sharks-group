@@ -1,3 +1,4 @@
+
 ---
 title: "business sharks test lukas"
 author: "lukas"
@@ -50,8 +51,8 @@ Company
 
 table(Company)
 
-## number of unique companies
-length(table(Company))
+length(table(Company))# Give the number of company
+
 
 class(df)
 rm(df)
@@ -76,9 +77,6 @@ coerce_date <- function(x) {
                       locale = locale(date_names = "en")))
   as.Date(out)
 }
-
-library(dplyr)
-
 ## cleaning data all across all column
 
 df <- df %>%
@@ -158,6 +156,10 @@ df <- df %>%
 
 ##size of trade per year/per month
 
+dates <- as.Date(df$Traded)
+years <- format(dates, "%Y")
+month <- format(dates, "%m")
+
 stpymid <- tapply(df$trade_size_mid, years, sum)
 stpymax<-tapply(df$Trade_Size_USD_max, years, sum)
 stpymin <- tapply(df$Trade_Size_USD_min, years, sum)
@@ -175,24 +177,6 @@ month <- format(dates, "%m")# take the month
 
 Ntpy <- table(years)#give the number for each year
 Ntpm <- table(month)# give the number for each month
-
-## total number of trades
-length(df$Trade_Size_USD_min)
-
-## average trade size
-mean(c(
-  mean(df$Trade_Size_USD_min, na.rm = TRUE),
-  mean(df$Trade_Size_USD_max, na.rm = TRUE)
-))
-
-## number of trades per ticker
-nb <- df %>%
-  group_by(Ticker) %>%
-  summarise(Num_Trades = n())
-
-nb
-
-
 
 ##Excess return ↔ Chamber correlation
 
@@ -289,13 +273,6 @@ ggplot(state_chamber_party, aes(x = State, y = Chamber, fill = Party_Signed_Perc
        y = "Chamber") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  
-## Top overperformers by raw excess return
-df %>%
-  filter(!is.na(excess_return)) %>%
-  arrange(desc(excess_return)) %>%
-  select(Name, Party, Company, Ticker, excess_return) %>%
-  head(10) 
   
 ##Excess return by Party
 
@@ -466,8 +443,6 @@ axis(1, at = df_monthly$Month, labels = format(df_monthly$Month, "%b %Y"), las=2
 
 #the average of excees of return is growing but it is still near 0. The data from 2012 are quite unsignificant because of the lack of some of them.
      
-library(lubridate)
-     
 # relation beetween excess of return and month 
 
 df_yearly <- df %>%
@@ -504,6 +479,36 @@ correlation
 plot(df_yearly$n_trades, df_yearly$avg_excess)
 
 
+##1. Histogram of trade size
 
+#LOG scale
 
+ggplot(df, aes(x = trade_size_mid)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "white") +
+  scale_x_log10(labels = scales::comma) +
+  labs(
+    title = "Distribution of Trade Size (Log Scale)",
+    x = "Trade Size (USD, log10)",
+    y = "Count"
+  ) +
+  theme_minimal()
 
+#categorising trade size
+
+df <- df %>%
+  mutate(trade_size_cat = case_when(
+    trade_size_mid < 1e4  ~ "< $10k",
+    trade_size_mid < 5e4  ~ "$10k–$50k",
+    trade_size_mid < 1e5  ~ "$50k–$100k",
+    trade_size_mid < 5e5  ~ "$100k–$500k",
+    TRUE                  ~ "> $500k"
+  ))
+
+ggplot(df, aes(x = trade_size_cat)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Trade Size Categories",
+    x = "Trade Size Category",
+    y = "Number of Trades"
+  ) +
+  theme_minimal()
