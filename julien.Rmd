@@ -474,9 +474,152 @@ correlation
 
 plot(df_yearly$n_trades, df_yearly$avg_excess)
 
-# based on that there is no correlation because of the first point in 2012 that disturb the correlation caluclation.
+View(df)
+
+
+##1. Histogram of trade size
+
+#LOG scale
+
+ggplot(df, aes(x = trade_size_mid)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "white") +
+  scale_x_log10(labels = scales::comma) +
+  labs(
+    title = "Distribution of Trade Size (Log Scale)",
+    x = "Trade Size (USD, log10)",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+#categorising trade size
+
+df <- df %>%
+  mutate(trade_size_cat = case_when(
+    trade_size_mid < 1e4  ~ "< $10k",
+    trade_size_mid < 5e4  ~ "$10k–$50k",
+    trade_size_mid < 1e5  ~ "$50k–$100k",
+    trade_size_mid < 5e5  ~ "$100k–$500k",
+    TRUE                  ~ "> $500k"
+  ))
+
+ggplot(df, aes(x = trade_size_cat)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Trade Size Categories",
+    x = "Trade Size Category",
+    y = "Number of Trades"
+  ) +
+  theme_minimal()
+
+##2. Boxplot: excess return by party
+
+ggplot(df, aes(x = Party, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Party",
+    x = "Party",
+    y = "Excess Return"
+  ) +
+  theme_minimal()
+  
+##3.1 Boxplot: excess return by chamber
+
+ggplot(df, aes(x = Chamber, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Chamber",
+    x = "Chamber",
+    y = "Excess Return"
+  ) +
+  theme_minimal()
+  
+##3.2 Boxplot: excess return by state
+
+ggplot(df, aes(x = State, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by State",
+    x = "State",
+    y = "Excess Return"
+  ) +
+  theme_minimal() 
+  
+##3.3 Boxplot: excess return by party
+
+ggplot(df, aes(x = Party, y = excess_return)) +   geom_point(na.rm = TRUE)+
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Party",
+    x = "Party",
+    y = "Excess Return"
+  ) +
+  theme_minimal()   
+
+
+  
+##4. Boxplot: excess return by transaction type
+
+ggplot(df, aes(x = Transaction, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Transaction Type",
+    x = "Transaction Type",
+    y = "Excess Return"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+  
+##6. Clean time series: number of trades over time
+
+df_ts <- df %>%
+  mutate(Month = as.Date(paste0(format(Traded, "%Y-%m"), "-01"))) %>%
+  group_by(Month) %>%
+  summarise(num_trades = n(), .groups = "drop")
+
+ggplot(df_ts, aes(x = Month, y = num_trades)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Number of Trades Over Time (Monthly)",
+    x = "Month",
+    y = "Number of Trades"
+  ) +
+  theme_minimal()
+  
+
+
+#correlation between trade_size and party
+
+df_two <- df_person |> 
+  dplyr::filter(Party %in% c("R", "D"))
+
+t.test(total_trade_value ~ Party, data = df_two)
+
+# there is no significant difference between the two party, it is quite balanced.
+
+#correlation between sale and purchase.
+
+df_sale <- df %>%
+  group_by(Transaction)%>%
+  summarise(Trade_size = sum(trade_size_mid))
+View(df_sale)
+
+df_sale
+  
+
+
+purchase_sizes <- df_sale$Trade_size[df_sale$Transaction == "Purchase"]
+sale_sizes <- df_sale$Trade_size[df_sale$Transaction == "Sale"]
 
 
 
+cor(purchase_sizes, sale_sizes, method = "pearson")
+
+cor(df$Trade_size[df$Transaction == "Purchase"],df$Trade_size[df$Transaction == "Sale",method = "pearson")
 
 
