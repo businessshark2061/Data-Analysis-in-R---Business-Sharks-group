@@ -512,3 +512,58 @@ ggplot(df, aes(x = trade_size_cat)) +
     y = "Number of Trades"
   ) +
   theme_minimal()
+
+##2. Boxplot: excess return by party
+
+ggplot(df, aes(x = Party, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Party",
+    x = "Party",
+    y = "Excess Return"
+  ) +
+  theme_minimal()
+  
+##3. Boxplot: excess return by chamber
+
+ggplot(df, aes(x = Chamber, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Chamber",
+    x = "Chamber",
+    y = "Excess Return"
+  ) +
+  theme_minimal()
+  
+##4. Boxplot: excess return by transaction type
+
+ggplot(df, aes(x = Transaction, y = excess_return)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(
+    title = "Excess Return by Transaction Type",
+    x = "Transaction Type",
+    y = "Excess Return"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+  
+##6. Clean time series: number of trades over time
+
+df_ts <- df %>%
+  mutate(Month = as.Date(paste0(format(Traded, "%Y-%m"), "-01"))) %>%
+  group_by(Month) %>%
+  summarise(num_trades = n(), .groups = "drop")
+
+ggplot(df_ts, aes(x = Month, y = num_trades)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Number of Trades Over Time (Monthly)",
+    x = "Month",
+    y = "Number of Trades"
+  ) +
+  theme_minimal()
+  
