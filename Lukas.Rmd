@@ -373,7 +373,10 @@ r_mkt <- m1 / m0 - 1
 excess_10d <- r_stock - r_mkt
 excess_10d
 
-
+# NOTE:
+# The excess_return variable is taken as given from the dataset.
+# Its exact construction (benchmark and event window) is not disclosed.
+# All analysis assumes excess_return is a consistent relative performance measure.
 
 ##Data 
 #total number of trades :
@@ -493,17 +496,32 @@ ggplot(df, aes(x = trade_size_mid)) +
   ) +
   theme_minimal()
 
-#categorising trade size
+##categorising trade size
+
+#ORDERING THROUGH FACTOR
 
 df <- df %>%
-  mutate(trade_size_cat = case_when(
-    trade_size_mid < 1e4  ~ "< $10k",
-    trade_size_mid < 5e4  ~ "$10k–$50k",
-    trade_size_mid < 1e5  ~ "$50k–$100k",
-    trade_size_mid < 5e5  ~ "$100k–$500k",
-    TRUE                  ~ "> $500k"
-  ))
-
+  mutate(
+    trade_size_cat = case_when(
+      trade_size_mid < 1e4  ~ "< $10k",
+      trade_size_mid < 5e4  ~ "$10k–$50k",
+      trade_size_mid < 1e5  ~ "$50k–$100k",
+      trade_size_mid < 5e5  ~ "$100k–$500k",
+      TRUE                  ~ "> $500k"
+    ),
+    trade_size_cat = factor(
+      trade_size_cat,
+      levels = c(
+        "< $10k",
+        "$10k–$50k",
+        "$50k–$100k",
+        "$100k–$500k",
+        "> $500k"
+      ),
+      ordered = TRUE
+    )
+  )
+  
 ggplot(df, aes(x = trade_size_cat)) +
   geom_bar(fill = "steelblue") +
   labs(
@@ -512,6 +530,7 @@ ggplot(df, aes(x = trade_size_cat)) +
     y = "Number of Trades"
   ) +
   theme_minimal()
+
 
 ##2. Boxplot: excess return by party
 
@@ -567,3 +586,30 @@ ggplot(df_ts, aes(x = Month, y = num_trades)) +
   ) +
   theme_minimal()
   
+##7. Excess Return by time 
+
+df_time_perf <- df %>%
+  mutate(Month = as.Date(paste0(format(Traded, "%Y-%m"), "-01"))) %>%
+  group_by(Month) %>%
+  summarise(
+    avg_performance = mean(performance, na.rm = TRUE),
+    median_performance = median(performance, na.rm = TRUE),
+    n_trades = n(),
+    .groups = "drop"
+  )
+
+ggplot(df_time_perf, aes(x = Month, y = avg_performance)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Average Trade Performance over Time",
+    x = "Month",
+    y = "Average Directional Performance"
+  ) +
+  theme_minimal()
+
+
+
+
+##8. Buy and sell over time 
