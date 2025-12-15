@@ -333,7 +333,8 @@ ggplot(df, aes(x = excess_return)) +
 
 df$net_gain <- df$excess_return * df$net_trade_direction
 
-#negative mean that it is a lost and positif mean that it is a gain
+# net_gain > 0  → directionally correct trade (good timing)
+# net_gain < 0  → directionally incorrect trade (bad timing)
 
 ##Top overperformers (right tail) — highest excess return
 df %>%
@@ -373,7 +374,10 @@ r_mkt <- m1 / m0 - 1
 excess_10d <- r_stock - r_mkt
 excess_10d
 
-
+# NOTE:
+# The excess_return variable is taken as given from the dataset.
+# Its exact construction (benchmark and event window) is not disclosed.
+# All analysis assumes excess_return is a consistent relative performance measure.
 
 ##Data 
 #total number of trades :
@@ -493,17 +497,32 @@ ggplot(df, aes(x = trade_size_mid)) +
   ) +
   theme_minimal()
 
-#categorising trade size
+##categorising trade size
+
+#ORDERING THROUGH FACTOR
 
 df <- df %>%
-  mutate(trade_size_cat = case_when(
-    trade_size_mid < 1e4  ~ "< $10k",
-    trade_size_mid < 5e4  ~ "$10k–$50k",
-    trade_size_mid < 1e5  ~ "$50k–$100k",
-    trade_size_mid < 5e5  ~ "$100k–$500k",
-    TRUE                  ~ "> $500k"
-  ))
-
+  mutate(
+    trade_size_cat = case_when(
+      trade_size_mid < 1e4  ~ "< $10k",
+      trade_size_mid < 5e4  ~ "$10k–$50k",
+      trade_size_mid < 1e5  ~ "$50k–$100k",
+      trade_size_mid < 5e5  ~ "$100k–$500k",
+      TRUE                  ~ "> $500k"
+    ),
+    trade_size_cat = factor(
+      trade_size_cat,
+      levels = c(
+        "< $10k",
+        "$10k–$50k",
+        "$50k–$100k",
+        "$100k–$500k",
+        "> $500k"
+      ),
+      ordered = TRUE
+    )
+  )
+  
 ggplot(df, aes(x = trade_size_cat)) +
   geom_bar(fill = "steelblue") +
   labs(
@@ -512,6 +531,7 @@ ggplot(df, aes(x = trade_size_cat)) +
     y = "Number of Trades"
   ) +
   theme_minimal()
+
 
 ##2. Boxplot: excess return by party
 
@@ -567,3 +587,93 @@ ggplot(df_ts, aes(x = Month, y = num_trades)) +
   ) +
   theme_minimal()
   
+  
+##Core question (headline result)
+#Do politicians make directionally correct trades?
+
+t.test(df$net_gain, mu = 0) 
+  
+#While statistically significant, the magnitude of the estimated net gain is small relative to its dispersion, suggesting limited economic significance.  
+
+##Distribution of net gain
+
+p99 <- quantile(abs(df$net_gain), 0.99, na.rm = TRUE)
+
+ggplot(df %>% filter(abs(net_gain) <= p99),
+       aes(x = net_gain)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "white") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Distribution of Directional Net Gain (Trimmed)",
+    x = "Net Gain",
+    y = "Count"
+  ) +
+  theme_minimal()  
+  
+##Buy vs Sell  
+  
+ggplot(df %>% filter(Transaction %in% c("Purchase", "Sale")),
+       aes(x = Transaction, y = net_gain)) +
+  geom_boxplot(outlier.alpha = 0.25) +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(title = "Net Gain by Transaction Type") +
+  theme_minimal()
+  
+##Monthly avg Net gain 
+
+df_month_gain <- df %>%
+  mutate(Month = as.Date(paste0(format(Traded, "%Y-%m"), "-01"))) %>%
+  group_by(Month) %>%
+  summarise(
+    avg_net_gain = mean(net_gain, na.rm = TRUE),
+    n_trades = n(),
+    .groups = "drop"
+  )
+
+ggplot(df_month_gain, aes(x = Month, y = avg_net_gain)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Average Directional Net Gain over Time",
+    x = "Month",
+    y = "Average Net Gain"
+  ) +
+  theme_minimal()
+  
+##Trade delay vs net gain
+#Do faster filings correspond to better trades?
+cor(df$trade_delay, df$net_gain, use = "complete.obs")
+
+#Visualisation
+ggplot(df, aes(x = trade_delay, y = net_gain)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  coord_cartesian(ylim = c(-300, 300)) +
+  labs(title = "Trade Delay vs Net Gain",
+       x = "Filing Delay (days)",
+       y = "Net Gain") +
+  theme_minimal()
+  
+#The correlation between filing delay and directional net gain is effectively zero (r = 0.004), indicating no meaningful relationship between reporting delay and trade performance.  
+
+##Party × Buy/Sell interaction
+
+df %>%
+  filter(Transaction %in% c("Purchase", "Sale")) %>%
+  group_by(Party, Transaction) %>%
+  summarise(
+    mean_net_gain = mean(net_gain, na.rm = TRUE),
+    median_net_gain = median(net_gain, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+  
+#Mean buy performance is negative
+#Mean sell performance is positive
+
+#Same pattern in medians → robust
+
+#This suggests:
+#Politicians are better at selling before declines than buying before rises.
+
