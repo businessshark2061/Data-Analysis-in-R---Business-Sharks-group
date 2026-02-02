@@ -939,3 +939,14 @@ A correlation comparison between sales and purchases is not meaningful because t
 This studies show a strong evidence of no correlation beetween excees return and party/ Chamber. Even if we get a big dataset, this was not well spread and it has also biased some result and it was not preccise for the most important thing : We did'nt know the pair between sell and purchase. Based on our data we have been able to change way and to analyzed Party and Chamber dominace and state  and correlation between number of sale and size of it. We decided to transform excess return to get net gain. 
 
 In conclusion this was not precise but we can say that the trade depend not on politician party but on each person. Because of lack of information we couldn't studies the impact of region on excees return.
+
+
+
+
+
+#use of AI 
+
+The use of AI was very necessary to fix many technical problem. It has been used for exemple to fix problem of Knit with the use of latex_engine: xelatex. 
+What is more a lot of function has been found in R to manage so code, such as lubridate and map. Many code have been thinking by AI but it as always been modify or at least been understand apart from some part to delete and reorganized data. 
+The AI was a tool to code, but not to give idea for which one to use.  
+Rmarkdown was made by our own without AI because of the facility to compute it. 
