@@ -934,8 +934,8 @@ sum(data$Transaction == "Exchange", na.rm = TRUE)
 A correlation comparison between sales and purchases is not meaningful because the number of observations differs substantially between these transaction types.
 
 
+#Conclusion
 
+This studies show a strong evidence of no correlation beetween excees return and party/ Chamber. Even if we get a big dataset, this was not well spread and it has also biased some result and it was not preccise for the most important thing : We did'nt know the pair between sell and purchase. Based on our data we have been able to change way and to analyzed Party and Chamber dominace and state  and correlation between number of sale and size of it. We decided to transform excess return to get net gain. 
 
-
-  
-  
+In conclusion this was not precise but we can say that the trade depend not on politician party but on each person. Because of lack of information we couldn't studies the impact of region on excees return.
